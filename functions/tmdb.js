@@ -54,10 +54,12 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const fullPath = event.path;
+        const path = event.path;
+        const queryString = event.rawQueryString;
+        const fullPath = queryString ? `${path}?${queryString}` : path;
         const authHeader = event.headers.authorization;
 
-        // 缓存键只使用请求路径
+        // 缓存键使用完整路径（包含查询参数）
         const cacheKey = fullPath;
 
         // 检查缓存

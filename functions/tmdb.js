@@ -36,21 +36,26 @@ function checkCacheSize() {
 // 定期清理缓存（每10分钟）
 setInterval(cleanExpiredCache, CACHE_DURATION);
 
-module.exports = async (req, res) => {
+exports.handler = async (event, context) => {
     // 设置 CORS 头
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    };
 
     // 处理 OPTIONS 请求
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers,
+            body: ''
+        };
     }
 
     try {
-        const fullPath = req.url;
-        const authHeader = req.headers.authorization;
+        const fullPath = event.path;
+        const authHeader = event.headers.authorization;
 
         // 缓存键只使用请求路径
         const cacheKey = fullPath;
@@ -60,7 +65,11 @@ module.exports = async (req, res) => {
             const cachedData = cache.get(cacheKey);
             if (Date.now() < cachedData.expiry) {
                 console.log('Cache hit:', fullPath);
-                return res.status(200).json(cachedData.data);
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify(cachedData.data)
+                };
             } else {
                 cache.delete(cacheKey);
             }
@@ -97,12 +106,20 @@ module.exports = async (req, res) => {
         }
 
         // 返回响应
-        res.status(response.status).json(response.data);
+        return {
+            statusCode: response.status,
+            headers,
+            body: JSON.stringify(response.data)
+        };
     } catch (error) {
         console.error('TMDB API error:', error);
-        res.status(error.response?.status || 500).json({
-            error: error.message,
-            details: error.response?.data
-        });
+        return {
+            statusCode: error.response?.status || 500,
+            headers,
+            body: JSON.stringify({
+                error: error.message,
+                details: error.response?.data
+            })
+        };
     }
-}; 
+};

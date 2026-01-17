@@ -1,0 +1,21 @@
+[build]
+  command = "echo 'Build complete'"
+  functions = "functions"
+
+[[redirects]]
+  from = "/"
+  to = "https://github.com/imaliang/tmdb-proxy"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/t/p/*"
+  to = "https://image.tmdb.org/t/p/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/tmdb"
+  status = 200
+  force = true
